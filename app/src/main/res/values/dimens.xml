@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    //margins
+    <dimen name="xs_margin">5dp</dimen>
+    <dimen name="sx_margin">8dp</dimen>
+    <dimen name="s_margin">10dp</dimen>
+    <dimen name="m_margin">15dp</dimen>
+    <dimen name="lm_margin">20dp</dimen>
+    <dimen name="l_margin">25dp</dimen>
+    <dimen name="xl_margin">30dp</dimen>
+
+    //padding
+    <dimen name="one_padding">1dp</dimen>
+    <dimen name="xs_padding">5dp</dimen>
+    <dimen name="s_padding">10dp</dimen>
+    <dimen name="m_padding">15dp</dimen>
+    <dimen name="lm_padding">20dp</dimen>
+    <dimen name="l_padding">25dp</dimen>
+    <dimen name="xl_padding">30dp</dimen>
+
+    //font
+    <dimen name="xs_font">5sp</dimen>
+    <dimen name="s_font">10sp</dimen>
+    <dimen name="sm_font">12sp</dimen>
+    <dimen name="m_font">15sp</dimen>
+    <dimen name="lm_font">20sp</dimen>
+    <dimen name="l_font">25sp</dimen>
+    <dimen name="xl_font">30sp</dimen>
+
+    //misc size
+    <dimen name="image_dimen">40dp</dimen>
+    <dimen name="news_image_dimen">160dp</dimen>
+    <dimen name="nav_height">75dp</dimen>
+    <dimen name="elavation">8dp</dimen>
+
+    //image
+    <dimen name="xs_image">20dp</dimen>
+    <dimen name="s_image">40dp</dimen>
+
+    //layout
+    <dimen name="zero_layout">0dp</dimen>
+    <dimen name="one_layout">1dp</dimen>
+    <dimen name="five_layout">5dp</dimen>
+    <dimen name="xs_layout">15dp</dimen>
+    <dimen name="sx_layout">20dp</dimen>
+    <dimen name="s_layout">40dp</dimen>
+    <dimen name="sm_layout">80dp</dimen>
+    <dimen name="m_layout">100dp</dimen>
+    <dimen name="l_layout">225dp</dimen>
+    <dimen name="ml_layout">300dp</dimen>
+    <dimen name="xl_layout">400dp</dimen>
+
+    //Misc
+    <dimen name="m_radius">50dp</dimen>
+    <dimen name="layout_200">200dp</dimen>
+    <dimen name="layout_150">150dp</dimen>
+    <dimen name="layout_30">30dp</dimen>
+</resources>
