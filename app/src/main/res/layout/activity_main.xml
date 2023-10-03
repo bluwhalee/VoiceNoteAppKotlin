@@ -12,10 +12,8 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/bottom_controls"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
         tools:listitem="@layout/item_messege" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -47,7 +45,6 @@
             android:layout_marginStart="@dimen/s_margin"
             android:padding="@dimen/s_padding"
             android:background="@drawable/rounded_rectangle_elevated"
-            android:elevation="@dimen/s_padding"
             >
             <TextView
                 android:id="@+id/timer_record"
@@ -57,21 +54,11 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 android:textColor="@color/black"
                 android:textSize="@dimen/m_font"
                 />
-            <TextView
-                android:id="@+id/release_textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/release"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textColor="@color/grayDark"
-                android:textSize="@dimen/m_font"
-                android:visibility="invisible"
-                />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/mic_ic_parent"
@@ -84,7 +71,6 @@
             android:layout_marginStart="@dimen/s_margin"
             android:background="@drawable/round_elevated"
             android:padding="@dimen/s_padding"
-            android:elevation="@dimen/s_padding"
             >
             <ImageView
                 android:id="@+id/mic_icon"

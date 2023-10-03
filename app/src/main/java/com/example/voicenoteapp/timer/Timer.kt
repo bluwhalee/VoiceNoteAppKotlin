@@ -2,13 +2,10 @@ package com.example.voicenoteapp.timer
 
 import android.os.Handler
 import android.os.Looper
+import com.example.voicenoteapp.interfaces.TimerInterface
 import java.time.Duration
 
-class Timer(listener: OnTimerTickListener) {
-
-    interface OnTimerTickListener{
-        fun onTimerTick(duration: String)
-    }
+class Timer(listener: TimerInterface) {
 
     private var handler = Handler(Looper.getMainLooper())
     private lateinit var runnable : Runnable
@@ -27,8 +24,6 @@ class Timer(listener: OnTimerTickListener) {
     }
 
     fun start() = handler.postDelayed(runnable, delay)
-
-    fun pause() = handler.removeCallbacks(runnable)
 
     fun stop() {
         handler.removeCallbacks(runnable)

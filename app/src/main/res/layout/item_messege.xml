@@ -3,10 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="50dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_margin="@dimen/s_margin"
+    android:layout_margin="@dimen/xs_margin"
     android:layout_marginStart="@dimen/lm_margin"
-    android:padding="@dimen/s_padding"
-    app:layout_constraintEnd_toEndOf="parent"
+    android:padding="@dimen/xs_padding"
+
     >
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="300dp"
@@ -23,7 +23,9 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:src="@drawable/baseline_play_arrow_24"/>
+        android:src="@drawable/baseline_play_arrow_24"
+        android:layout_marginStart="@dimen/s_margin"
+        />
         <SeekBar
             android:id="@+id/seek_bar"
         android:layout_width="0dp"

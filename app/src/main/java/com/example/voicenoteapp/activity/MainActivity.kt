@@ -10,24 +10,20 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.widget.SeekBar
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
-import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.Room
 import com.example.demoproject1.adapters.MessegeAdapter
-import com.example.voicenoteapp.DB.AppDatabase
 import com.example.voicenoteapp.R
 import com.example.voicenoteapp.databinding.ActivityMainBinding
 import com.example.voicenoteapp.databinding.ItemMessegeBinding
 import com.example.voicenoteapp.interfaces.MessegeItemInterface
+import com.example.voicenoteapp.interfaces.TimerInterface
 import com.example.voicenoteapp.model.AudioRecord
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.example.voicenoteapp.timer.Timer
-import com.example.voicenoteapp.utils.Constants
 import com.example.voicenoteapp.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.GlobalScope
@@ -38,7 +34,7 @@ import java.io.FileOutputStream
 const val REQUEST_CODE = 200
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener, MessegeItemInterface{
+class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
     private var handler = Handler()
     private lateinit var binding: ActivityMainBinding
@@ -53,14 +49,11 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener, MessegeItem
     private lateinit var date : String
     private var isRecording = false
     private var isPlaying = false
-    private lateinit var db : AppDatabase
     private lateinit var viewModel: MainViewModel
     private lateinit var recyclerAdapter: MessegeAdapter
-    private var currentAudioRecord: AudioRecord? = null
-    private var currentBinding: ItemMessegeBinding? = null
+    private var prevAudioRecord: AudioRecord? = null
+    private var prevBinding: ItemMessegeBinding? = null
     private lateinit var runnable: Runnable
-    private lateinit var currentRunnable: Runnable
-
     private lateinit var vibrator : Vibrator
     private var timer = Timer(this)
 
@@ -82,71 +75,103 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener, MessegeItem
         setAllAudioObserver()
     }
 
-    override fun onPlayClicked(audioRecord: AudioRecord, binding: ItemMessegeBinding) {
+    override fun onPlayClicked(audioRecord: AudioRecord, messegeBinding: ItemMessegeBinding) {
 
         if(!isPlaying)
         {
-                player = MediaPlayer.create(this, audioRecord.filePath.toUri())
-                player.seekTo(binding.seekBar.progress)
+            //Play audio
+            player = MediaPlayer.create(this, audioRecord.filePath.toUri())
+            player.apply {
+                player.seekTo(messegeBinding.seekBar.progress)
                 player.start()
-                binding.playBtn.setImageResource(R.drawable.baseline_pause_24)
-                currentBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
-                currentAudioRecord = audioRecord
-                isPlaying = true
-                currentBinding = binding
-                binding.seekBar.max = player.duration
-                handler.removeCallbacksAndMessages(null)
-                runnable = Runnable {
-                    binding.seekBar.progress = player.currentPosition
-                    println(player.currentPosition)
-                    handler.postDelayed(runnable, 100) // Update every 1 second
-                }
-                handler.postDelayed(runnable,100)
+            }
+
+            //Set icon,Seekbar
+            messegeBinding.apply {
+                playBtn.setImageResource(R.drawable.baseline_pause_24)
+                seekBar.max = player.duration
+            }
+
+            //Move Seek Bar, stop moving the prev one
+            handler.removeCallbacksAndMessages(null)
+            moveSeekBar(messegeBinding)
+
+            //Set Icons of prev
+            prevBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
+
+            //Get ready for the next onClick
+            isPlaying = true
+            prevAudioRecord = audioRecord
+            prevBinding = messegeBinding
+
+
         }
         else
         {
-            if(audioRecord.filePath == currentAudioRecord?.filePath)
+            if(audioRecord.id == prevAudioRecord?.id)
             {
+                //Pause the current audio
                 player.pause()
+
                 isPlaying = false
-                binding.playBtn.setImageResource(R.drawable.baseline_play_arrow_24)
+                messegeBinding.playBtn.setImageResource(R.drawable.baseline_play_arrow_24)
+                //Stop Seekbar
                 handler.removeCallbacks(runnable)
-                audioRecord.duration = player.currentPosition.toString()
             }
             else{
+                //Play the audio
                 player.apply {
                     stop()
                     reset()
                     release()
                 }
                 player = MediaPlayer.create(this, audioRecord.filePath.toUri())
-                player.seekTo(binding.seekBar.progress)
-                player.start()
-                handler.removeCallbacks(runnable)
-
-                binding.seekBar.max = player.duration
-
-                handler.removeCallbacks(runnable)
-                currentAudioRecord?.duration = player.currentPosition.toString()
-                runnable = Runnable {
-                    binding.seekBar.progress = player.currentPosition
-                    handler.postDelayed(runnable, 100) // Update every 1 second
+                player.apply {
+                    seekTo(messegeBinding.seekBar.progress)
+                    start()
                 }
-                handler.postDelayed(runnable,100)
 
+                //Set SeekBar
+                messegeBinding.apply {
+                    seekBar.max = player.duration
+                    playBtn.setImageResource(R.drawable.baseline_pause_24)
+                }
+
+                //Move Seek Bar, stop moving the prev one
+                handler.removeCallbacks(runnable)
+                moveSeekBar(messegeBinding)
+
+                //Set Icons of prev
+                prevBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
+
+                //Get ready for the next onClick
                 isPlaying = true
-                binding.playBtn.setImageResource(R.drawable.baseline_pause_24)
-//                currentBinding?.seekBar?.progress = 0
-                currentBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
-                currentAudioRecord = audioRecord
-                currentBinding = binding
+                prevAudioRecord = audioRecord
+                prevBinding = messegeBinding
+
             }
         }
+        //If audio is completed
         player.setOnCompletionListener {
-            binding.seekBar.progress =0
+
+            //Reset SeekBar
             handler.removeCallbacks(runnable)
-            binding.playBtn.setImageResource(R.drawable.baseline_play_arrow_24)
+            messegeBinding.apply {
+                seekBar.progress =0
+                playBtn.setImageResource(R.drawable.baseline_play_arrow_24)
+            }
+            isPlaying = false
+            prevBinding = null
         }
+    }
+
+    private fun moveSeekBar(messegeBinding: ItemMessegeBinding)
+    {
+        runnable = Runnable {
+            messegeBinding.seekBar.progress = player.currentPosition
+            handler.postDelayed(runnable, 100) // Update every 1 second
+        }
+        handler.postDelayed(runnable,100)
     }
 
     private fun setViewModel() {
@@ -197,7 +222,6 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener, MessegeItem
             binding.apply {
                 micIcon.setImageResource(R.drawable.baseline_mic_24)
                 timerRecord.text = "00:00"
-                releaseTextView.isVisible = false
             }
             isRecording=false
             save()
@@ -247,7 +271,6 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener, MessegeItem
         }
         isRecording = true
         binding.micIcon.setImageResource(R.drawable.baseline_stop_24)
-        binding.releaseTextView.isVisible = true
         timer.start()
     }
     override fun onTimerTick(duration: String) {
