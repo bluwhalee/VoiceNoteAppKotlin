@@ -36,28 +36,31 @@ const val REQUEST_CODE = 200
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
-    private var handler = Handler()
-    private lateinit var binding: ActivityMainBinding
-    private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.VIBRATE)
-    private var permissionGranted = false
+    //Properties Region
     private lateinit var recorder: MediaRecorder
     private lateinit var player: MediaPlayer
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var date : String
+    private lateinit var duration : String
+    private lateinit var viewModel: MainViewModel
+    private lateinit var recyclerAdapter: MessegeAdapter
+    private lateinit var runnable: Runnable
+    private lateinit var vibrator : Vibrator
+
+    private var handler = Handler()
+    private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.VIBRATE)
+    private var permissionGranted = false
     private var dirPath = ""
     private var fileName = ""
     private var filePath =""
-    private lateinit var duration : String
-    private lateinit var date : String
     private var isRecording = false
     private var isPlaying = false
-    private lateinit var viewModel: MainViewModel
-    private lateinit var recyclerAdapter: MessegeAdapter
     private var prevAudioRecord: AudioRecord? = null
     private var prevBinding: ItemMessegeBinding? = null
-    private lateinit var runnable: Runnable
-    private lateinit var vibrator : Vibrator
     private var timer = Timer(this)
 
 
+    //Lifecycle
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -65,6 +68,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
         setContentView(binding.root)
     }
 
+    //Private and Override members
     private fun init()
     {
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -174,41 +178,47 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
         handler.postDelayed(runnable,100)
     }
 
-    private fun setViewModel() {
-        viewModel = ViewModelProvider(
-            this,
-        )[MainViewModel::class.java]
-    }
-
-    private fun setRecycler() {
-        recyclerAdapter = MessegeAdapter(this)
-        binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = recyclerAdapter
-        }
-    }
-
-    private fun setAllAudioObserver() {
-        viewModel.getAudioRecords().observe(this) { list ->
-            list?.let {
-                recyclerAdapter.updateList(list)
-            }
-        }
-    }
-
-
     private fun setPermissions(){
 
         permissionGranted = ActivityCompat.checkSelfPermission(this,permissions[0]) == PackageManager.PERMISSION_GRANTED
         if(!permissionGranted)
             ActivityCompat.requestPermissions(this,permissions, REQUEST_CODE)
     }
+
+
     private fun setMicOnClick() {
         binding.micIcParent.setOnClickListener{
             if(isRecording) stopRecording()
             else startRecording()
             vibrator.vibrate(VibrationEffect.createOneShot(50,VibrationEffect.DEFAULT_AMPLITUDE))
         }
+    }
+    private fun startRecording(){
+        if(!permissionGranted){
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+        }
+
+        recorder = MediaRecorder(this)
+        dirPath = "${filesDir}/"
+
+        date = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss").format(Date())
+        fileName = "voice_note_$date"
+
+        val outputFile = File(getExternalFilesDir(null),"$fileName.mp3")
+        filePath = outputFile.absolutePath
+
+
+        recorder.apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(FileOutputStream(outputFile).fd)
+            prepare()
+            start()
+        }
+        isRecording = true
+        binding.micIcon.setImageResource(R.drawable.baseline_stop_24)
+        timer.start()
     }
 
     private fun stopRecording() {
@@ -236,6 +246,28 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
         }
     }
 
+    private fun setViewModel() {
+        viewModel = ViewModelProvider(
+            this,
+        )[MainViewModel::class.java]
+    }
+
+    private fun setRecycler() {
+        recyclerAdapter = MessegeAdapter(this)
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = recyclerAdapter
+        }
+    }
+
+    private fun setAllAudioObserver() {
+        viewModel.getAudioRecords().observe(this) { list ->
+            list?.let {
+                recyclerAdapter.updateList(list)
+            }
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -244,34 +276,6 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if(requestCode == REQUEST_CODE)
             permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun startRecording(){
-        if(!permissionGranted){
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
-        }
-
-        recorder = MediaRecorder(this)
-        dirPath = "${filesDir}/"
-
-        date = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss").format(Date())
-        fileName = "voice_note_$date"
-
-        val outputFile = File(getExternalFilesDir(null),"$fileName.mp3")
-        filePath = outputFile.absolutePath
-
-
-        recorder.apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(FileOutputStream(outputFile).fd)
-            prepare()
-            start()
-        }
-        isRecording = true
-        binding.micIcon.setImageResource(R.drawable.baseline_stop_24)
-        timer.start()
     }
     override fun onTimerTick(duration: String) {
         this.duration = duration
