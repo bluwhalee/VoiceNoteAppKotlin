@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
@@ -26,8 +27,15 @@ import java.util.Date
 import com.example.voicenoteapp.timer.Timer
 import com.example.voicenoteapp.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -36,28 +44,30 @@ const val REQUEST_CODE = 200
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
-    //Properties Region
+    //Properties
     private lateinit var recorder: MediaRecorder
     private lateinit var player: MediaPlayer
     private lateinit var binding: ActivityMainBinding
-    private lateinit var date : String
-    private lateinit var duration : String
     private lateinit var viewModel: MainViewModel
     private lateinit var recyclerAdapter: MessegeAdapter
     private lateinit var runnable: Runnable
-    private lateinit var vibrator : Vibrator
+    private lateinit var vibratorManager : VibratorManager
+    private lateinit var vibrator: Vibrator
 
-    private var handler = Handler()
-    private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.VIBRATE)
-    private var permissionGranted = false
     private var dirPath = ""
     private var fileName = ""
-    private var filePath =""
+    private var filePath = ""
+    private var date = ""
+    private var duration = ""
+    private var permissionGranted = false
     private var isRecording = false
     private var isPlaying = false
+    private var handler = Handler()
+    private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.VIBRATE)
     private var prevAudioRecord: AudioRecord? = null
     private var prevBinding: ItemMessegeBinding? = null
     private var timer = Timer(this)
+    private var job : Job? = null
 
 
     //Lifecycle
@@ -71,7 +81,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
     //Private and Override members
     private fun init()
     {
-        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
         setPermissions()
         setMicOnClick()
         setViewModel()
@@ -81,6 +91,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
     override fun onPlayClicked(audioRecord: AudioRecord, messegeBinding: ItemMessegeBinding) {
 
+        //If nothing playing already
         if(!isPlaying)
         {
             //Play audio
@@ -97,8 +108,9 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
             }
 
             //Move Seek Bar, stop moving the prev one
-            handler.removeCallbacksAndMessages(null)
+            job?.cancel()
             moveSeekBar(messegeBinding)
+
 
             //Set Icons of prev
             prevBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
@@ -110,6 +122,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
 
         }
+        //If something is playing
         else
         {
             if(audioRecord.id == prevAudioRecord?.id)
@@ -120,7 +133,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
                 isPlaying = false
                 messegeBinding.playBtn.setImageResource(R.drawable.baseline_play_arrow_24)
                 //Stop Seekbar
-                handler.removeCallbacks(runnable)
+                job?.cancel()
             }
             else{
                 //Play the audio
@@ -142,8 +155,10 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
                 }
 
                 //Move Seek Bar, stop moving the prev one
-                handler.removeCallbacks(runnable)
+
+                job?.cancel()
                 moveSeekBar(messegeBinding)
+
 
                 //Set Icons of prev
                 prevBinding?.playBtn?.setImageResource(R.drawable.baseline_play_arrow_24)
@@ -171,11 +186,12 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
 
     private fun moveSeekBar(messegeBinding: ItemMessegeBinding)
     {
-        runnable = Runnable {
-            messegeBinding.seekBar.progress = player.currentPosition
-            handler.postDelayed(runnable, 100) // Update every 1 second
+        job = GlobalScope.launch {
+            while (true) {
+                messegeBinding.seekBar.progress = player.currentPosition
+                delay(100)
+            }
         }
-        handler.postDelayed(runnable,100)
     }
 
     private fun setPermissions(){
@@ -190,6 +206,7 @@ class MainActivity : AppCompatActivity(), TimerInterface, MessegeItemInterface{
         binding.micIcParent.setOnClickListener{
             if(isRecording) stopRecording()
             else startRecording()
+            vibrator = vibratorManager.defaultVibrator
             vibrator.vibrate(VibrationEffect.createOneShot(50,VibrationEffect.DEFAULT_AMPLITUDE))
         }
     }
